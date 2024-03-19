@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bubble Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <select id="interestSelect">
+        <option value="all">全部</option>
+        <option value="travel">Travel</option>
+        <option value="sports">Sports</option>
+        <option value="lifestyle">Lifestyle</option>
+    </select>
+    <svg width="1260" height="900"></svg>
+    <script>
+        d3.csv("dataset.csv").then(function(allData) {
+            allData.forEach(function(d) {
+                d.income = +d.income;
+                d.time_spent = +d.time_spent;
+            });
+
+            const svg = d3.select("svg"),
+                  width = +svg.attr("width"),
+                  height = +svg.attr("height"),
+                  margin = {top: 20, right: 120, bottom: 30, left: 40};
+
+            const x = d3.scaleLinear()
+                        .domain([9000, d3.max(allData, d => d.income)])
+                        .range([margin.left, width - margin.right]);
+            const y = d3.scaleLinear()
+                        .domain([0, d3.max(allData, d => d.time_spent)])
+                        .range([height - margin.bottom, margin.top]);
+            const size = d3.scaleSqrt()
+                           .domain([0, d3.max(allData, d => d.income)])
+                           .range([1, 5]);
+            const color = d3.scaleOrdinal()
+                            .domain(["travel", "sports", "lifestyle"])
+                            .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
+
+            // 绘制坐标轴一次，不在updateChart函数中重复绘制
+            svg.append("g")
+               .attr("transform", `translate(0,${height - margin.bottom})`)
+               .call(d3.axisBottom(x));
+            svg.append("g")
+               .attr("transform", `translate(${margin.left},0)`)
+               .call(d3.axisLeft(y));
+
+            // 图例一次性绘制
+            const legend = svg.selectAll(".legend")
+                .data(color.domain())
+                .enter().append("g")
+                .attr("class", "legend")
+                .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+            legend.append("rect")
+                .attr("x", width - 18)
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", color);
+
+            legend.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9)
+                .attr("dy", ".35em")
+                .style("text-anchor", "end")
+                .text(d => d);
+
+            // 更新图表的函数，不重新绘制坐标轴
+            function updateChart(interest) {
+                let filteredData = (interest === "all") ? allData : allData.filter(d => d.interests === interest);
+                
+                svg.selectAll(".dot").remove(); // 移除旧的点
+
+                svg.selectAll(".dot")
+                   .data(filteredData)
+                   .enter().append("circle")
+                   .attr("class", "dot")
+                   .attr("r", d => size(d.income))
+                   .attr("cx", d => x(d.income))
+                   .attr("cy", d => y(d.time_spent))
+                   .style("fill", d => color(d.interests));
+            }
+
+            // 为下拉选择框添加事件监听器
+            document.getElementById("interestSelect").addEventListener("change", function() {
+                updateChart(this.value);
+            });
+
+            // 初始化图表
+            updateChart("all");
+        });
+    </script>
+</body>
+</html>
+

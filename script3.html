@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bubble Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <svg width="1260" height="900"></svg>
+    <script>
+        d3.csv("dataset.csv").then(function(allData) {
+            // 过滤出兴趣相关的数据
+            const filteredData = allData.filter(d => d.interests === "Travel").map(d => {
+                d.income = +d.income;
+                d.time_spent = +d.time_spent;
+                return d;
+            });
+
+            const svg = d3.select("svg"),
+                  width = +svg.attr("width"),
+                  height = +svg.attr("height"),
+                  margin = {top: 20, right: 120, bottom: 30, left: 40};
+
+            const x = d3.scaleLinear()
+                        .domain([9000, d3.max(allData, d => d.income)])
+                        .range([margin.left, width - margin.right]);
+            const y = d3.scaleLinear()
+                        .domain([0, d3.max(filteredData, d => d.time_spent)])
+                        .range([height - margin.bottom, margin.top]);
+            const size = d3.scaleSqrt()
+                           .domain([0, d3.max(filteredData, d => d.income)])
+                           .range([1, 5]);
+            const color = d3.scaleOrdinal()
+                            .range(["#1f77b4"]); // 指定一个颜色
+
+            // 绘制坐标轴
+            svg.append("g")
+               .attr("transform", `translate(0,${height - margin.bottom})`)
+               .call(d3.axisBottom(x));
+            svg.append("g")
+               .attr("transform", `translate(${margin.left},0)`)
+               .call(d3.axisLeft(y));
+
+            // 绘制点
+            svg.selectAll(".dot")
+               .data(filteredData)
+               .enter().append("circle")
+               .attr("class", "dot")
+               .attr("r", d => size(d.income))
+               .attr("cx", d => x(d.income))
+               .attr("cy", d => y(d.time_spent))
+               .style("fill", color); // 使用单一颜色
+
+            // 绘制图例
+            svg.append("g")
+               .attr("class", "legend")
+               .attr("transform", `translate(${width - margin.right + 20},20)`)
+               .append("text")
+               .text("Travel")
+               .style("font-size", "16px")
+               .attr("y", 10);
+        });
+    </script>
+</body>
+</html>
+

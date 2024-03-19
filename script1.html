@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>年龄与社交媒体使用时间关系图</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 60px;
+            height: 28px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: rgb(11, 100, 218);
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <svg width="800" height="600"></svg>
+    <script>
+        const data = [{"age": 18, "time_spent": 5.24, "count": 25}, {"age": 19, "time_spent": 5.916666666666667, "count": 24}, {"age": 20, "time_spent": 5.75, "count": 24}, {"age": 21, "time_spent": 5.315789473684211, "count": 19}, {"age": 22, "time_spent": 5.16, "count": 25}, {"age": 23, "time_spent": 4.260869565217392, "count": 23}, {"age": 24, "time_spent": 5.357142857142857, "count": 14}, {"age": 25, "time_spent": 4.6521739130434785, "count": 23}, {"age": 26, "time_spent": 4.277777777777778, "count": 18}, {"age": 27, "time_spent": 4.666666666666667, "count": 18}, {"age": 28, "time_spent": 5.6, "count": 20}, {"age": 29, "time_spent": 4.7727272727272725, "count": 22}, {"age": 30, "time_spent": 5.055555555555555, "count": 18}, {"age": 31, "time_spent": 4.2631578947368425, "count": 19}, {"age": 32, "time_spent": 4.333333333333333, "count": 18}, {"age": 33, "time_spent": 5.0, "count": 21}, {"age": 34, "time_spent": 5.454545454545454, "count": 22}, {"age": 35, "time_spent": 5.0, "count": 16}, {"age": 36, "time_spent": 4.85, "count": 20}, {"age": 37, "time_spent": 4.888888888888889, "count": 18}, {"age": 38, "time_spent": 5.7894736842105265, "count": 19}, {"age": 39, "time_spent": 5.7727272727272725, "count": 22}, {"age": 40, "time_spent": 5.0, "count": 24}, {"age": 41, "time_spent": 5.64, "count": 25}, {"age": 42, "time_spent": 5.25, "count": 24}, {"age": 43, "time_spent": 4.909090909090909, "count": 33}, {"age": 44, "time_spent": 5.625, "count": 16}, {"age": 45, "time_spent": 4.866666666666666, "count": 30}, {"age": 46, "time_spent": 3.3684210526315788, "count": 19}, {"age": 47, "time_spent": 5.0, "count": 21}, {"age": 48, "time_spent": 6.1875, "count": 16}, {"age": 49, "time_spent": 5.68, "count": 25}, {"age": 50, "time_spent": 5.1, "count": 30}, {"age": 51, "time_spent": 4.888888}, {"age": 51, "time_spent": 4.888888888888889, "count": 18}, {"age": 52, "time_spent": 4.642857142857143, "count": 28}, {"age": 53, "time_spent": 5.739130434782608, "count": 23}, {"age": 54, "time_spent": 4.592592592592593, "count": 27}, {"age": 55, "time_spent": 5.5, "count": 16}, {"age": 56, "time_spent": 4.84, "count": 25}, {"age": 57, "time_spent": 5.0, "count": 17}, {"age": 58, "time_spent": 4.0, "count": 18}, {"age": 59, "time_spent": 5.176470588235294, "count": 17}, {"age": 60, "time_spent": 4.916666666666667, "count": 12}];
+
+        const svg = d3.select("svg"),
+              margin = {top: 20, right: 20, bottom: 30, left: 40},
+              width = +svg.attr("width") - margin.left - margin.right,
+              height = +svg.attr("height") - margin.top - margin.bottom,
+              g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        const x = d3.scaleLinear()
+                    .rangeRound([0, width])
+                    .domain(d3.extent(data, d => d.age));
+        const y = d3.scaleLinear()
+                    .rangeRound([height, 0])
+                    .domain([0, d3.max(data, d => d.time_spent)]);
+        const z = d3.scaleSqrt()
+                    .range([4, 20])
+                    .domain([0, d3.max(data, d => d.count)]);
+
+        const colorScale = d3.scaleSequential(d3.interpolateBlues)
+                    .domain([0, d3.max(data, d => d.count)]);
+
+        const tooltip = d3.select("body").append("div")
+                 .attr("class", "tooltip")
+                 .style("opacity", 0);
+
+        g.append("g")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(x))
+         .append("text")
+         .attr("fill", "#000")
+         .attr("x", width)
+         .attr("y", -6)
+         .attr("text-anchor", "end")
+         .text("年龄");
+
+        g.append("g")
+         .call(d3.axisLeft(y))
+         .append("text")
+         .attr("fill", "#000")
+         .attr("transform", "rotate(-90)")
+         .attr("y", 6)
+         .attr("dy", "0.71em")
+         .attr("text-anchor", "end")
+         .text("平均使用时间（小时）");
+
+        g.selectAll(".dot")
+         .data(data)
+         .enter().append("circle")
+         .attr("class", "dot")
+         .attr("r", d => z(d.count))
+         .attr("cx", d => x(d.age))
+         .attr("cy", d => y(d.time_spent))
+         .attr("fill", d => colorScale(d.count))
+         .attr("opacity", 0.7)
+         .on("mouseover", function(event, d) {
+             tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+             tooltip.html("年龄: " + d.age + "<br/>平均使用时间: " + d.time_spent + "小时<br/>用户数: " + d.count)
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+         })
+         .on("mouseout", function(d) {
+             tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+         });
+    </script>
+</body>
+</html>
+
